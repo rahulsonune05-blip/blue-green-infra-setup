@@ -105,6 +105,12 @@ resource "aws_eks_cluster" "main" {
   ]
 }
 
+resource "aws_iam_openid_connect_provider" "eks-oidc" {
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks-certificate.certificates[0].sha1_fingerprint]
+  url             = data.tls_certificate.eks-certificate.url
+}
+
 # IAM Role for EKS Node Group
 resource "aws_iam_role" "eks_node_group_role" {
   name = "${var.project_name}-eks-node-group-role"
