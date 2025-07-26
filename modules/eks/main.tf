@@ -87,8 +87,8 @@ resource "aws_eks_cluster" "main" {
   vpc_config {
     subnet_ids         = var.private_subnet_ids # EKS control plane typically uses private subnets
     security_group_ids = [aws_security_group.eks_cluster_sg.id]
-    endpoint_private_access = true # Enable private access for the cluster endpoint
-    endpoint_public_access  = false # Enable public access for the cluster endpoint
+    endpoint_private_access = false # Enable private access for the cluster endpoint
+    endpoint_public_access  = true # Enable public access for the cluster endpoint
     // public_access_cidrs     = ["0.0.0.0/0"] # Restrict this in production to your IP ranges
   }
 
