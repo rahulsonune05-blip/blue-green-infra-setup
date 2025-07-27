@@ -1,4 +1,5 @@
 # IAM Role for EKS Cluster
+
 resource "aws_iam_role" "eks_cluster_role" {
   name = "${var.project_name}-eks-cluster-role"
 
@@ -21,25 +22,30 @@ resource "aws_iam_role" "eks_cluster_role" {
 }
 
 # Attach AmazonEKSClusterPolicy to EKS Cluster Role
+
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
   role       = aws_iam_role.eks_cluster_role.name
 }
 
 # Attach AmazonEKSVPCResourceController to EKS Cluster Role (for VPC CNI)
+
 resource "aws_iam_role_policy_attachment" "eks_vpc_resource_controller_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
   role       = aws_iam_role.eks_cluster_role.name
 }
 
 # Security Group for EKS Cluster Control Plane
+
 # Define the security group itself without direct cross-references in ingress/egress
+
 resource "aws_security_group" "eks_cluster_sg" {
   name        = "${var.project_name}-eks-cluster-sg"
   description = "Security group for EKS cluster control plane"
   vpc_id      = var.vpc_id
 
   # Allow egress to anywhere (for external services, ECR, etc.)
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -56,6 +62,7 @@ resource "aws_security_group" "eks_cluster_sg" {
 }
 
 # Ingress Rule for EKS Cluster SG: Allow communication from Node Group
+
 resource "aws_security_group_rule" "eks_cluster_sg_ingress_from_node_group" {
   type                     = "ingress"
   from_port                = 443
@@ -67,6 +74,7 @@ resource "aws_security_group_rule" "eks_cluster_sg_ingress_from_node_group" {
 }
 
 # Egress Rule for EKS Cluster SG: Allow communication to Node Group
+
 resource "aws_security_group_rule" "eks_cluster_sg_egress_to_node_group" {
   type                     = "egress"
   from_port                = 0
@@ -79,7 +87,8 @@ resource "aws_security_group_rule" "eks_cluster_sg_egress_to_node_group" {
 
 
 # Create EKS Cluster
-resource "aws_eks_cluster" "main" {
+
+resource "aws_eks_cluster" "this" {
   name     = var.cluster_name
   role_arn = aws_iam_role.eks_cluster_role.arn
   version  = var.cluster_version
@@ -99,6 +108,7 @@ resource "aws_eks_cluster" "main" {
   }
 
   # Ensure cluster is created after VPC resources
+
   depends_on = [
     aws_iam_role_policy_attachment.eks_cluster_policy_attachment,
     aws_iam_role_policy_attachment.eks_vpc_resource_controller_attachment
@@ -112,6 +122,7 @@ resource "aws_iam_openid_connect_provider" "eks-oidc" {
 }
 
 # IAM Role for EKS Node Group
+
 resource "aws_iam_role" "eks_node_group_role" {
   name = "${var.project_name}-eks-node-group-role"
 
@@ -134,18 +145,21 @@ resource "aws_iam_role" "eks_node_group_role" {
 }
 
 # Attach AmazonEKSWorkerNodePolicy to Node Group Role
+
 resource "aws_iam_role_policy_attachment" "eks_worker_node_policy_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
   role       = aws_iam_role.eks_node_group_role.name
 }
 
 # Attach AmazonEC2ContainerRegistryReadOnly to Node Group Role
+
 resource "aws_iam_role_policy_attachment" "eks_ecr_read_only_policy_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = aws_iam_role.eks_node_group_role.name
 }
 
 # Attach AmazonEKS_CNI_Policy to Node Group Role (for VPC CNI plugin)
+
 resource "aws_iam_role_policy_attachment" "eks_cni_policy_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
   role       = aws_iam_role.eks_node_group_role.name
@@ -153,12 +167,14 @@ resource "aws_iam_role_policy_attachment" "eks_cni_policy_attachment" {
 
 # Security Group for EKS Node Group
 # Define the security group itself without direct cross-references in ingress/egress
+
 resource "aws_security_group" "eks_node_group_sg" {
   name        = "${var.project_name}-eks-node-group-sg"
   description = "Security group for EKS worker nodes"
   vpc_id      = var.vpc_id
 
   # Ingress from Node Group itself (for Pod-to-Pod communication, NodePort services)
+
   ingress {
     from_port   = 0
     to_port     = 0
@@ -168,6 +184,7 @@ resource "aws_security_group" "eks_node_group_sg" {
   }
 
   # Ingress for SSH (optional, for debugging/management) - Restrict this in production
+
   ingress {
     from_port   = 22
     to_port     = 22
@@ -177,6 +194,7 @@ resource "aws_security_group" "eks_node_group_sg" {
   }
 
   # Egress to anywhere (for pulling images, external services)
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -193,6 +211,7 @@ resource "aws_security_group" "eks_node_group_sg" {
 }
 
 # Ingress Rule for EKS Node Group SG: Allow communication from EKS Cluster Control Plane
+
 resource "aws_security_group_rule" "eks_node_group_sg_ingress_from_cluster" {
   type                     = "ingress"
   from_port                = 443
@@ -205,8 +224,9 @@ resource "aws_security_group_rule" "eks_node_group_sg_ingress_from_cluster" {
 
 
 # Create EKS Managed Node Group
-resource "aws_eks_node_group" "main" {
-  cluster_name    = aws_eks_cluster.main.name
+
+resource "aws_eks_node_group" "this" {
+  cluster_name    = aws_eks_cluster.this.name
   node_group_name = var.node_group_name
   node_role_arn   = aws_iam_role.eks_node_group_role.arn
   subnet_ids      = var.private_subnet_ids # Node group should be in private subnets
@@ -219,22 +239,25 @@ resource "aws_eks_node_group" "main" {
   }
 
   # Associate with the node group security group
+
   remote_access {
     ec2_ssh_key = "blue-green-servers-key" # Optional: Specify an EC2 key pair for SSH access
     source_security_group_ids = [aws_security_group.eks_node_group_sg.id]
   }
 
   # Add tags to the EC2 instances launched by the node group
+
   tags = {
     Name        = "${var.project_name}-eks-node-group"
     Project     = var.project_name
     Environment = "EKS"
-    "eks:cluster-name" = aws_eks_cluster.main.name # Required tag for EKS
+    "eks:cluster-name" = aws_eks_cluster.this.name # Required tag for EKS
   }
 
-  # Ensure node group is created after cluster and IAM roles
+  # Ensure node group is created after cluster & IAM roles
+
   depends_on = [
-    aws_eks_cluster.main,
+    aws_eks_cluster.this,
     aws_iam_role_policy_attachment.eks_worker_node_policy_attachment,
     aws_iam_role_policy_attachment.eks_ecr_read_only_policy_attachment,
     aws_iam_role_policy_attachment.eks_cni_policy_attachment,

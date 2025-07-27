@@ -68,7 +68,7 @@ resource "aws_eip" "nat" {
 
 # Create NAT Gateway
 
-resource "aws_nat_gateway" "main" {
+resource "aws_nat_gateway" "this" {
   count         = length(var.public_subnets)
   allocation_id = aws_eip.nat[count.index].id
   subnet_id     = aws_subnet.public[count.index].id # Place NAT Gateway in public subnet
@@ -78,6 +78,7 @@ resource "aws_nat_gateway" "main" {
     Project = var.project_name
   }
   # Ensure NAT Gateway is created after Internet Gateway is attached
+  
   depends_on = [aws_internet_gateway.this]
 }
 
@@ -126,7 +127,7 @@ resource "aws_route" "private_nat_gateway" {
   count                  = length(aws_route_table.private)
   route_table_id         = aws_route_table.private[count.index].id
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.main[count.index].id # Associate with corresponding NAT Gateway
+  nat_gateway_id         = aws_nat_gateway.this[count.index].id # Associate with corresponding NAT Gateway
 }
 
 # Associate Private Subnets with Private Route Tables
