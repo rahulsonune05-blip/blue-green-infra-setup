@@ -115,6 +115,16 @@ resource "aws_eks_cluster" "this" {
   ]
 }
 
+# Data resource for OpenID OIDC provider URL
+
+data "tls_certificate" "eks-certificate" {
+  url = aws_eks_cluster.this.identity[0].oidc[0].issuer
+
+    depends_on = [
+    aws_eks_cluster.this
+  ]
+}
+
 resource "aws_iam_openid_connect_provider" "eks-oidc" {
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = [data.tls_certificate.eks-certificate.certificates[0].sha1_fingerprint]
