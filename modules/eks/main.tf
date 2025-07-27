@@ -251,7 +251,7 @@ resource "aws_eks_node_group" "this" {
   # Associate with the node group security group
 
   remote_access {
-    ec2_ssh_key = "blue-green-servers-key" # Optional: Specify an EC2 key pair for SSH access
+    ec2_ssh_key = "blue-green-server-key" # Optional: Specify an EC2 key pair for SSH access
     source_security_group_ids = [aws_security_group.eks_node_group_sg.id]
   }
 
